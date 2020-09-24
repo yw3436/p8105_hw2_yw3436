@@ -70,3 +70,19 @@ left_join(precip_data, month_df, by = 'month')
 ```
 
 This dataset contains information from the Mr. Trashwheel trash collector in Baltimore, Maryland. As trash enters the inner harbor, the trashwheel collects that trash, and stores it in a dumpster. The dataset contains information on year, month and trash collected, including some specific kinds of trash. There are a total of `r nrow(trashwheel)` rows in our final dataset. Additional data sheets include month precipitation data in 2017 and 2018.
+
+## Problem 2
+
+First, read the data set, clean the names, and select the required columns.
+Next, convert the entry variable to a logical variable.
+
+```{r}
+nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv') %>% 
+  janitor::clean_names() %>% 
+  select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
+  mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE))
+```
+
+
+Description of the dataset:
+This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
