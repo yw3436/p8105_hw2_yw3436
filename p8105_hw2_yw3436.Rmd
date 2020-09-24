@@ -13,10 +13,15 @@ library(readxl)
 
 ## Problem 1
 
+First, define a path to the dataset.
+```{r}
+path_to_data = './data/Trash-Wheel-Collection-Totals-8-6-19.xlsx'
+```
+
 Read the Mr. Trashwheel dataset.
 ```{r}
 trashwheel = 
-  read_excel('./data/Trash-Wheel-Collection-Totals-8-6-19.xlsx',
+  read_excel(path = path_to_data,
              sheet = "Mr. Trash Wheel",
              range = cell_cols("A:N")) %>% 
   janitor::clean_names() %>% 
