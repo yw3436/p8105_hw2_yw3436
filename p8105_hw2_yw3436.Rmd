@@ -81,8 +81,13 @@ nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv'
   janitor::clean_names() %>% 
   select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
   mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE))
+nyc_transit_df
 ```
-
 
 Description of the dataset:
 This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
+
+The data is tidy because the columns represent the variables, the rows represent different observations, and each value has a cell.
+
+* There are `r nrow(distinct(nyc_transit_df, line, station_name, keep_all = FALSE))` distinct stations.
+
