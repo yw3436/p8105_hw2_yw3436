@@ -77,17 +77,96 @@ First, read the data set, clean the names, and select the required columns.
 Next, convert the entry variable to a logical variable.
 
 ```{r}
-nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv') %>% 
+nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv', na.strings = c("","NA")) %>% 
   janitor::clean_names() %>% 
   select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
-  mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE))
+  mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE)) %>% 
+  distinct()
 nyc_transit_df
 ```
+
+########should I remove all the repeated entry?
+
 
 Description of the dataset:
 This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
 
-The data is tidy because the columns represent the variables, the rows represent different observations, and each value has a cell.
+The data is not tidy because from route1 to route11 we see that the route information is spread across 11 columns.
 
-* There are `r nrow(distinct(nyc_transit_df, line, station_name, keep_all = FALSE))` distinct stations.
+#######the columns represent the variables, the rows represent different observations, and each value has a cell.
+
+Next, answering the three questions:
+
+```{r}
+# Question 1: distinct stations
+station_num = distinct(nyc_transit_df, line, station_name)
+
+# Question 2: ADA compliant stations
+ada_num = distinct(nyc_transit_df, line, station_name, ada) %>% 
+  filter(ada == TRUE)
+
+# Question 3: proportion of entrances without vending
+no_vending_num = nyc_transit_df %>% 
+  select(line,station_name, entry, entrance_type, vending) %>% 
+  filter(vending == 'NO')
+
+entrance_num = select(nyc_transit_df, line,station_name, entry, entrance_type, vending)
+
+no_vending_prop = nrow(no_vending_num)/nrow(entrance_num)
+
+#prop.table(table(data$vending))
+#data %>% 
+  #group_by(vending) %>% 
+  #summarise(prop = n()/nrow(data))
+
+#nrow(distinct(filter(nyc_transit_df, vending == 'NO'), line, station_name, keep_all = FALSE))/nrow(distinct(nyc_transit_df, line, station_name, keep_all = FALSE))
+```
+
+
+* There are `r nrow(station_num)` distinct stations.
+* There are `r nrow(distinct(filter(nyc_transit_df, ada == TRUE), line, station_name, keep_all = FALSE))` ADA compliant stations.
+* There are `r nrow(ada_num)` ADA compliant stations.
+
+
+* The proportion of station entrances/exits without vending allow entrance is `r no_vending_prop`
+
+`r nrow(distinct(filter(nyc_transit_df, vending == 'NO'), line, station_name))/nrow(distinct(nyc_transit_df, line, station_name))`.
+
+Next, separate route name and route number as separate variables.
+
+```{r}
+nyc_transit = nyc_transit_df %>% 
+  mutate(route8 = as.character(route8), 
+        route9 = as.character(route9),
+        route10 = as.character(route10),
+        route11 = as.character(route11))
+
+nyc_transit_tidy = nyc_transit %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route",
+    names_prefix = "route",
+    values_to = "route_name"
+  ) %>% 
+  drop_na(route_name)
+
+# remove NA data or " " data for route
+
+```
+
+Select distinct station that serves A train
+
+```{r}
+a_train_serv = nyc_transit_tidy %>% 
+  filter(route_name == "A") %>% 
+  distinct(line, station_name, ada)
+
+a_train_ada = a_train_serv %>% 
+  filter(ada == TRUE)
+```
+
+There are `r nrow(a_train_serv)` distinct stations serving A train.
+Among these stations, `r nrow(a_train_ada)` are ADA compliant.
+
+
 
