@@ -107,12 +107,11 @@ ada_num = distinct(nyc_transit_df, line, station_name, ada) %>%
 
 # Question 3: proportion of entrances without vending
 no_vending_num = nyc_transit_df %>% 
-  select(line,station_name, entry, entrance_type, vending) %>% 
+  select(line, station_name, vending) %>% 
   filter(vending == 'NO')
 
-entrance_num = select(nyc_transit_df, line,station_name, entry, entrance_type, vending)
+no_vending_prop = nrow(no_vending_num)/nrow(nyc_transit_df)
 
-no_vending_prop = nrow(no_vending_num)/nrow(entrance_num)
 
 #prop.table(table(data$vending))
 #data %>% 
@@ -168,5 +167,51 @@ a_train_ada = a_train_serv %>%
 There are `r nrow(a_train_serv)` distinct stations serving A train.
 Among these stations, `r nrow(a_train_ada)` are ADA compliant.
 
+
+## Problem 3
+
+First step: process the pols_mon data
+```{r}
+#month_df = tibble(
+  #month = 01:12,
+  #month_name = month.name
+#)
+pols_month = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
+  separate(mon, c("year", "month", "day"), "-") %>% 
+  mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) %>% 
+  mutate(month = month.name[month]) %>% 
+  mutate(president = prez_gop) %>% 
+  select(-day, -prez_gop, -prez_dem) %>% 
+  relocate(year, month, president)
+
+# president = 0 means dem, =1 means gop
+  #left_join(., month_df, by = 'month') %>% 
+```
+
+Second step: processing the snp data
+```{r}
+snp = read.csv('./data/fivethirtyeight_datasets/snp.csv') %>% 
+  separate(date, c("month", "day", "year"), "/") %>% 
+  mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) %>% 
+  mutate(month = month.name[month]) %>% 
+  select(-day) %>% 
+  relocate(year, month)
+```
+
+Third step: tidying the unemployment data
+```{r}
+snp = read.csv('./data/fivethirtyeight_datasets/snp.csv') %>% 
+  separate(date, c("month", "day", "year"), "/") %>% 
+  mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) %>% 
+  mutate(month = month.name[month]) %>% 
+  select(-day) %>% 
+  relocate(year, month)
+```
 
 
