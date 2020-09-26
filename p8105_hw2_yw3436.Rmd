@@ -82,14 +82,13 @@ nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv'
   select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
   mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE)) %>% 
   distinct()
-nyc_transit_df
 ```
 
 ########should I remove all the repeated entry?
 
 
 Description of the dataset:
-This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
+This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable, and repeated objects have been cleaned. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
 
 The data is not tidy because from route1 to route11 we see that the route information is spread across 11 columns.
 
@@ -107,7 +106,6 @@ ada_num = distinct(nyc_transit_df, line, station_name, ada) %>%
 
 # Question 3: proportion of entrances without vending
 no_vending_num = nyc_transit_df %>% 
-  select(line, station_name, vending) %>% 
   filter(vending == 'NO')
 
 no_vending_prop = nrow(no_vending_num)/nrow(nyc_transit_df)
@@ -176,7 +174,7 @@ First step: process the pols_mon data
   #month = 01:12,
   #month_name = month.name
 #)
-pols_month = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
+pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
   separate(mon, c("year", "month", "day"), "-") %>% 
   mutate(year = as.integer(year),
          month = as.integer(month),
@@ -204,14 +202,37 @@ snp = read.csv('./data/fivethirtyeight_datasets/snp.csv') %>%
 
 Third step: tidying the unemployment data
 ```{r}
-snp = read.csv('./data/fivethirtyeight_datasets/snp.csv') %>% 
-  separate(date, c("month", "day", "year"), "/") %>% 
-  mutate(year = as.integer(year),
-         month = as.integer(month),
-         day = as.integer(day)) %>% 
-  mutate(month = month.name[month]) %>% 
-  select(-day) %>% 
+month_df = tibble(
+  month_abb = c("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"),
+  month = month.name
+)
+
+unemployment = read.csv('./data/fivethirtyeight_datasets/unemployment.csv') %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    jan:dec,
+    names_to = "month_abb",
+    values_to = "unemployment_prop"
+  ) %>% 
+  left_join(., month_df, by = 'month_abb') %>% 
+  select(-month_abb) %>% 
   relocate(year, month)
 ```
 
+Join the three data sets together
 
+```{r}
+join_df = pols %>% 
+  left_join(snp, by = c('year', 'month')) %>% 
+  left_join(unemployment, by = c('year', 'month'))
+```
+
+Description of the dataset:
+
+* _pols_: This data set contains `r ncol(pols)` variables, `r ls(pols)`, which are related to the the number of national politicians who are democratic or republican during `r min(pull(pols, year))` and `r max(pull(pols, year))`, and there are `r nrow(pols)` observations in the dataset.
+
+* _snp_: This data set contains `r ncol(snp)` variables, `r ls(snp)`, which are related to Standard & Poor’s stock market index (S&P) during `r min(pull(snp, year))` and `r max(pull(snp, year))`, and there are `r nrow(snp)` observations in the dataset.
+
+* _unemployment_: This data set contains `r ncol(unemployment)` variables, `r ls(unemployment)`, which represent the percentage of unemployment during `r min(pull(unemployment, year))` and `r max(pull(unemployment, year))`, and there are `r nrow(unemployment)` observations in the dataset.
+
+* **resulting data**: The joined dataframe contains `r nrow(join_df)` observations and `r ncol(join_df)` variables to show the general information about politics from `r min(pull(join_df, year))` to `r max(pull(join_df, year))`. The variables include `r ls(join_df)`.
