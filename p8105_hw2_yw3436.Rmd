@@ -80,19 +80,13 @@ Next, convert the entry variable to a logical variable.
 nyc_transit_df = read.csv('./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv', na.strings = c("","NA")) %>% 
   janitor::clean_names() %>% 
   select(line, station_name, station_latitude, station_longitude, route1:route11, entry, vending, entrance_type, ada) %>% 
-  mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE)) %>% 
-  distinct()
+  mutate(entry = recode(entry, 'YES' = TRUE, 'NO' = FALSE))
 ```
 
-########should I remove all the repeated entry?
-
-
 Description of the dataset:
-This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable, and repeated objects have been cleaned. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
+This data set includes information about the NYC subway transits. It contains the following variables: `r ls(nyc_transit_df)`. So far, the data has been imported into R, and the variable names have been cleaned, and the entry variable was recoded as a logical variable. The size of the data set is `r nrow(nyc_transit_df)` rows x `r ncol(nyc_transit_df)` columns.
 
 The data is not tidy because from route1 to route11 we see that the route information is spread across 11 columns.
-
-#######the columns represent the variables, the rows represent different observations, and each value has a cell.
 
 Next, answering the three questions:
 
@@ -106,49 +100,31 @@ ada_num = distinct(nyc_transit_df, line, station_name, ada) %>%
 
 # Question 3: proportion of entrances without vending
 no_vending_num = nyc_transit_df %>% 
-  filter(vending == 'NO')
+  filter(vending == 'NO', entry == TRUE)
+entry_num = nyc_transit_df %>%
+  filter(vending == "NO")
 
-no_vending_prop = nrow(no_vending_num)/nrow(nyc_transit_df)
-
-
-#prop.table(table(data$vending))
-#data %>% 
-  #group_by(vending) %>% 
-  #summarise(prop = n()/nrow(data))
-
-#nrow(distinct(filter(nyc_transit_df, vending == 'NO'), line, station_name, keep_all = FALSE))/nrow(distinct(nyc_transit_df, line, station_name, keep_all = FALSE))
+no_vending_prop = nrow(no_vending_num)/nrow(entry_num)
 ```
 
-
-* There are `r nrow(station_num)` distinct stations.
-* There are `r nrow(distinct(filter(nyc_transit_df, ada == TRUE), line, station_name, keep_all = FALSE))` ADA compliant stations.
-* There are `r nrow(ada_num)` ADA compliant stations.
-
-
-* The proportion of station entrances/exits without vending allow entrance is `r no_vending_prop`
-
-`r nrow(distinct(filter(nyc_transit_df, vending == 'NO'), line, station_name))/nrow(distinct(nyc_transit_df, line, station_name))`.
+* There are `r distinct(nyc_transit_df, line, station_name) %>% nrow()` distinct stations.
+* There are `r distinct(nyc_transit_df, line, station_name, ada) %>% filter(ada == TRUE) %>% nrow()` ADA compliant stations.
+* The proportion of station entrances/exits without vending allow entrance is `r no_vending_prop`.
 
 Next, separate route name and route number as separate variables.
 
 ```{r}
-nyc_transit = nyc_transit_df %>% 
+nyc_transit_tidy = nyc_transit_df %>% 
   mutate(route8 = as.character(route8), 
         route9 = as.character(route9),
         route10 = as.character(route10),
-        route11 = as.character(route11))
-
-nyc_transit_tidy = nyc_transit %>% 
+        route11 = as.character(route11)) %>% 
   pivot_longer(
     route1:route11,
     names_to = "route",
     names_prefix = "route",
     values_to = "route_name"
-  ) %>% 
-  drop_na(route_name)
-
-# remove NA data or " " data for route
-
+  )
 ```
 
 Select distinct station that serves A train
@@ -165,15 +141,10 @@ a_train_ada = a_train_serv %>%
 There are `r nrow(a_train_serv)` distinct stations serving A train.
 Among these stations, `r nrow(a_train_ada)` are ADA compliant.
 
-
 ## Problem 3
 
 First step: process the pols_mon data
 ```{r}
-#month_df = tibble(
-  #month = 01:12,
-  #month_name = month.name
-#)
 pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
   separate(mon, c("year", "month", "day"), "-") %>% 
   mutate(year = as.integer(year),
@@ -184,8 +155,16 @@ pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>%
   select(-day, -prez_gop, -prez_dem) %>% 
   relocate(year, month, president)
 
-# president = 0 means dem, =1 means gop
-  #left_join(., month_df, by = 'month') %>% 
+
+pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
+  separate(mon, c("year", "month", "day"), "-") %>% 
+  mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) %>% 
+  mutate(month = month.name[month]) %>% 
+  mutate(president = ifelse(prez_gop == 1, "gop", "dem")) %>% 
+  select(-day, -prez_gop, -prez_dem) %>% 
+  relocate(year, month, president)
 ```
 
 Second step: processing the snp data
