@@ -132,7 +132,7 @@ Select distinct station that serves A train
 ```{r}
 a_train_serv = nyc_transit_tidy %>% 
   filter(route_name == "A") %>% 
-  distinct(line, station_name, ada)
+  distinct(line, station_name, ada, .keep_all = TRUE)
 
 a_train_ada = a_train_serv %>% 
   filter(ada == TRUE)
@@ -145,17 +145,6 @@ Among these stations, `r nrow(a_train_ada)` are ADA compliant.
 
 First step: process the pols_mon data
 ```{r}
-pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
-  separate(mon, c("year", "month", "day"), "-") %>% 
-  mutate(year = as.integer(year),
-         month = as.integer(month),
-         day = as.integer(day)) %>% 
-  mutate(month = month.name[month]) %>% 
-  mutate(president = prez_gop) %>% 
-  select(-day, -prez_gop, -prez_dem) %>% 
-  relocate(year, month, president)
-
-
 pols = read.csv('./data/fivethirtyeight_datasets/pols-month.csv') %>% 
   separate(mon, c("year", "month", "day"), "-") %>% 
   mutate(year = as.integer(year),
@@ -180,21 +169,15 @@ snp = read.csv('./data/fivethirtyeight_datasets/snp.csv') %>%
 ```
 
 Third step: tidying the unemployment data
-```{r}
-month_df = tibble(
-  month_abb = c("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"),
-  month = month.name
-)
 
+```{r}
 unemployment = read.csv('./data/fivethirtyeight_datasets/unemployment.csv') %>% 
   janitor::clean_names() %>% 
   pivot_longer(
     jan:dec,
-    names_to = "month_abb",
+    names_to = "month",
     values_to = "unemployment_prop"
   ) %>% 
-  left_join(., month_df, by = 'month_abb') %>% 
-  select(-month_abb) %>% 
   relocate(year, month)
 ```
 
